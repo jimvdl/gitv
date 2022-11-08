@@ -77,24 +77,19 @@ fn main() {
 }
 
 fn tag(v: &str, hash: &str) {
+    let tag = format!("v{}", v);
     let output = Command::new("git")
-        .args(["rev-parse", &format!("v{}^{{}}", v)])
+        .args(["rev-parse", &format!("{}^{{}}", tag)])
         .output()
         .unwrap();
-
-    if !output.stderr.is_empty() {
-        println!("should release v{}", v);
-    }
 
     let output = String::from_utf8_lossy(&output.stdout);
     let existing = output.split_whitespace().next().unwrap();
     if existing == hash {
-        println!("{} v{} (already tagged)", hash, v);
+        println!("{} {} (already tagged)", hash, tag);
         return;
     }
 
-    println!("Release v{} with hash {}", v, hash);
-    let tag = format!("v{}", v);
     let status = Command::new("git")
         .args(["tag", "-a", "-m", &format!("Release {}", tag), &tag, &hash])
         .status()
@@ -103,4 +98,6 @@ fn tag(v: &str, hash: &str) {
     if !status.success() {
         panic!("git tag failed");
     }
+
+    println!("{} {}", hash, tag);
 }
