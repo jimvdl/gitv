@@ -63,11 +63,10 @@ fn main() {
             last_hash = hash;
             continue;
         }
-
+        
         if v == "0.0.0" {
-            v = toml.package.version;
+            v = toml.package.version.clone();
             last_hash = hash;
-            continue;
         }
 
         tag(&v, last_hash);
@@ -77,11 +76,11 @@ fn main() {
     }
 }
 
-fn tag(v: &str, last_hash: &str) {
+fn tag(v: &str, hash: &str) {
     let output = Command::new("git")
-    .args(["rev-parse", &format!("v{}^{{}}", v)])
-    .output()
-    .unwrap();
+        .args(["rev-parse", &format!("v{}^{{}}", v)])
+        .output()
+        .unwrap();
 
     if !output.stderr.is_empty() {
         println!("should release v{}", v);
@@ -89,8 +88,19 @@ fn tag(v: &str, last_hash: &str) {
 
     let output = String::from_utf8_lossy(&output.stdout);
     let existing = output.split_whitespace().next().unwrap();
-    // println!("existing: {} -- last_hash: {}", existing, last_hash);
-    if existing == last_hash {
-        println!("{} v{} (already tagged)", last_hash, v);
+    if existing == hash {
+        println!("{} v{} (already tagged)", hash, v);
+        return;
+    }
+
+    println!("Release v{} with hash {}", v, hash);
+    let tag = format!("v{}", v);
+    let status = Command::new("git")
+        .args(["tag", "-a", "-m", &format!("Release {}", tag), &tag, &hash])
+        .status()
+        .unwrap();
+
+    if !status.success() {
+        panic!("git tag failed");
     }
 }
