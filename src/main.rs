@@ -39,17 +39,24 @@ fn main() {
     // let output = String::from_utf8_lossy(&output.stdout);
     // println!("output {}", output);
 
+    let mut last_hash = String::new();
+    let mut v = String::from("0.0.0");
+
+    walk(&mut last_hash, &mut v);
+
+    tag(&v, &last_hash);
+}
+
+fn walk(last_hash: &mut String, v: &mut String) {
     let output = Command::new("git")
-        .args(["log", "--format=%H", "HEAD", "Cargo.toml"])
-        .output()
-        .unwrap();
+    .args(["log", "--format=%H", "HEAD", "Cargo.toml"])
+    .output()
+    .unwrap();
 
     let output = String::from_utf8_lossy(&output.stdout);
 
     let hashes: Vec<&str> = output.split_whitespace().collect();
 
-    let mut last_hash = "";
-    let mut v = String::from("0.0.0");
     for hash in hashes {
         let output = Command::new("git")
             .args(["show", &format!("{}:Cargo.toml", hash)])
@@ -59,20 +66,20 @@ fn main() {
         let output = String::from_utf8_lossy(&output.stdout);
         let toml: CargoToml = toml::from_str(&output).unwrap();
 
-        if v == toml.package.version {
-            last_hash = hash;
+        if *v == toml.package.version {
+            *last_hash = hash.to_owned();
             continue;
         }
         
         if v == "0.0.0" {
-            v = toml.package.version.clone();
-            last_hash = hash;
+            *v = toml.package.version.clone();
+            *last_hash = hash.to_owned();
+            continue;
         }
 
         tag(&v, last_hash);
-
-        last_hash = hash;
-        v = toml.package.version;
+        *last_hash = hash.to_owned();
+        *v = toml.package.version;
     }
 }
 
