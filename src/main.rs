@@ -60,7 +60,14 @@ fn tag(tag: &Version, hash: &Hash) {
     }
 
     let status = Command::new("git")
-        .args(["tag", "-a", "-m", &format!("Release {}", tag), tag.as_ref(), hash.as_ref()])
+        .args([
+            "tag", 
+            "-a", 
+            "-m", 
+            &format!("Release {}", tag), 
+            &format!("v{}", tag.as_ref()), 
+            hash.as_ref()
+        ])
         .status()
         .unwrap();
 
