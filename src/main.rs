@@ -1,10 +1,5 @@
-use clap::Parser;
 use serde::Deserialize;
 use std::process::Command;
-
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {}
 
 #[derive(Debug, Deserialize)]
 struct CargoToml {
@@ -17,28 +12,6 @@ struct Package {
 }
 
 fn main() {
-    // let output = Command::new("git")
-    //     .arg("tag")
-    //     .output()
-    //     .unwrap();
-
-    // let output = String::from_utf8_lossy(&output.stdout);
-    // let versions: Vec<&str> = output.split_whitespace().collect();
-
-    // println!("{:?}", versions);
-
-    // let output = Command::new("git")
-    //     .args(vec!["rev-parse", "v0.4.0"])
-    //     .output()
-    //     .unwrap();
-
-    // if !output.stderr.is_empty() {
-    //     panic!("{}", String::from_utf8_lossy(&output.stderr));
-    // }
-
-    // let output = String::from_utf8_lossy(&output.stdout);
-    // println!("output {}", output);
-
     let mut last_hash = String::new();
     let mut v = String::from("0.0.0");
 
