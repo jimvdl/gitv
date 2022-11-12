@@ -15,7 +15,7 @@ fn walk_git_log<'a>() -> (Version, Hash<'a>) {
     let output = String::from_utf8_lossy(&output.stdout);
     let hashes: Vec<&str> = output.split_whitespace().collect();
 
-    let mut last_hash = "";
+    let mut last_hash = Cow::Borrowed("");
     let mut v = Version::default();
     for hash in hashes {
         let output = Command::new("git")
@@ -28,22 +28,28 @@ fn walk_git_log<'a>() -> (Version, Hash<'a>) {
         let crate_version = Version(Some(toml.package.version));
 
         if v == crate_version {
-            last_hash = hash;
+            last_hash = Cow::Borrowed(hash);
             continue;
         }
         
         if v.is_unset() {
             v = crate_version;
-            last_hash = hash;
+            last_hash = Cow::Borrowed(hash);
             continue;
         }
 
-        tag(&v, &Hash(Cow::Borrowed(last_hash)));
-        last_hash = hash;
+        tag(&v, &Hash(last_hash));
+        last_hash = Cow::Borrowed(hash);
         v = crate_version;
     }
 
-    (v, Hash(Cow::Owned(last_hash.to_owned())))
+    (v, Hash(Cow::Owned(last_hash.into_owned())))
+    // the below somehow doesn't compile, can't reproduce in a mre
+    // (v, last_hash.into_owned())
+    //
+    // pub fn into_owned(self) -> Self {
+    //     Self(Cow::Owned(self.0.into_owned()))
+    // }
 }
 
 fn tag(tag: &Version, hash: &Hash) {
@@ -101,7 +107,7 @@ impl AsRef<str> for Version {
     fn as_ref(&self) -> &str {
         match &self.0 {
             Some(s) => &s,
-            None => ""
+            None => unreachable!()
         }
     }
 }
