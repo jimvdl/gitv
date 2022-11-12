@@ -1,35 +1,22 @@
 use serde::Deserialize;
-use std::process::Command;
-
-#[derive(Debug, Deserialize)]
-struct CargoToml {
-    package: Package,
-}
-
-#[derive(Debug, Deserialize)]
-struct Package {
-    version: String,
-}
+use std::{process::Command, fmt::Display, borrow::Cow};
 
 fn main() {
-    let mut last_hash = String::new();
-    let mut v = String::from("0.0.0");
-
-    walk(&mut last_hash, &mut v);
-
-    tag(&v, &last_hash);
+    let (version, hash) = walk_git_log();
+    tag(&version, &hash);
 }
 
-fn walk(last_hash: &mut String, v: &mut String) {
+fn walk_git_log<'a>() -> (Version, Hash<'a>) {
     let output = Command::new("git")
-    .args(["log", "--format=%H", "HEAD", "Cargo.toml"])
-    .output()
-    .unwrap();
+        .args(["log", "--format=%H", "HEAD", "Cargo.toml"])
+        .output()
+        .unwrap();
 
     let output = String::from_utf8_lossy(&output.stdout);
-
     let hashes: Vec<&str> = output.split_whitespace().collect();
 
+    let mut last_hash = "";
+    let mut v = Version::default();
     for hash in hashes {
         let output = Command::new("git")
             .args(["show", &format!("{}:Cargo.toml", hash)])
@@ -38,26 +25,28 @@ fn walk(last_hash: &mut String, v: &mut String) {
 
         let output = String::from_utf8_lossy(&output.stdout);
         let toml: CargoToml = toml::from_str(&output).unwrap();
+        let crate_version = Version(Some(toml.package.version));
 
-        if *v == toml.package.version {
-            *last_hash = hash.to_owned();
+        if v == crate_version {
+            last_hash = hash;
             continue;
         }
         
-        if v == "0.0.0" {
-            *v = toml.package.version.clone();
-            *last_hash = hash.to_owned();
+        if v.is_unset() {
+            v = crate_version;
+            last_hash = hash;
             continue;
         }
 
-        tag(&v, last_hash);
-        *last_hash = hash.to_owned();
-        *v = toml.package.version;
+        tag(&v, &Hash(Cow::Borrowed(last_hash)));
+        last_hash = hash;
+        v = crate_version;
     }
+
+    (v, Hash(Cow::Owned(last_hash.to_owned())))
 }
 
-fn tag(v: &str, hash: &str) {
-    let tag = format!("v{}", v);
+fn tag(tag: &Version, hash: &Hash) {
     let output = Command::new("git")
         .args(["rev-parse", &format!("{}^{{}}", tag)])
         .output()
@@ -71,7 +60,7 @@ fn tag(v: &str, hash: &str) {
     }
 
     let status = Command::new("git")
-        .args(["tag", "-a", "-m", &format!("Release {}", tag), &tag, &hash])
+        .args(["tag", "-a", "-m", &format!("Release {}", tag), tag.as_ref(), hash.as_ref()])
         .status()
         .unwrap();
 
@@ -80,4 +69,61 @@ fn tag(v: &str, hash: &str) {
     }
 
     println!("{} {}", hash, tag);
+}
+
+#[derive(Debug, Deserialize)]
+struct CargoToml {
+    package: Package,
+}
+
+#[derive(Debug, Deserialize)]
+struct Package {
+    version: String,
+}
+
+#[derive(Default, PartialEq)]
+struct Version(Option<String>);
+
+impl Version {
+    pub fn is_unset(&self) -> bool {
+        self.0.is_none()
+    }
+}
+
+impl AsRef<str> for Version {
+    fn as_ref(&self) -> &str {
+        match &self.0 {
+            Some(s) => &s,
+            None => ""
+        }
+    }
+}
+
+impl Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.0 {
+            Some(v) => f.write_fmt(format_args!("v{}", v)),
+            None => f.write_str("v0.0.0")
+        }
+    }
+}
+
+struct Hash<'a>(Cow<'a, str>);
+
+impl<'a> AsRef<str> for Hash<'a> {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl<'a> PartialEq<&Hash<'a>> for &str {
+    fn eq(&self, other: &&Hash) -> bool {
+        **self == *other.0
+    }
+}
+
+impl<'a> Display for Hash<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
 }
