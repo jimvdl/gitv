@@ -1,9 +1,9 @@
 # gitv
 
-Walks back the git log of Cargo.toml by first executing `git log --format%H HEAD
-Cargo.toml` to get all git commit hashes where Cargo.toml was modified (`%H`
-outputs only hashes). It then iterates the commit hashes while running `git show
-$hash:Cargo.toml` for every hash, where `$hash` is the current
+Walks back the git log of Cargo.toml by first executing `git log --format=%H
+HEAD Cargo.toml` to get all git commit hashes where Cargo.toml was modified
+(`%H` outputs only hashes). It then iterates the commit hashes while running
+`git show $hash:Cargo.toml` for every hash, where `$hash` is the current
 [`Hash`](src/hash.rs). It then tries to parse the version field of the toml file
 and wraps it in a [`Version`](src/version.rs). Some versioning checks determine
 if the current commit needs to be tagged and if it finds that commit, tag it. 
