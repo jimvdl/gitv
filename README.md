@@ -14,6 +14,7 @@ Output: prints every commit has, the tag and if it has been previously tagged.
 
 | Commit Hash                              | Tag                     |
 | -----------------------------------------|-------------------------|
+| 9d0fae2bcbb9621c17b711716f7bbc9adcff31a1 | v0.4.1                  |
 | f36d7da9da4a2dfb1a841eccbbc237cc63e9a5b5 | v0.4.0 (already tagged) |
 | 47f8945c7eaa250f7c00712e0aee0153b2d4f8eb | v0.3.3 (already tagged) |
 | 687bd92d1abd491c2c3f113faefa782391d147fe | v0.3.2 (already tagged) |
