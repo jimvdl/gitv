@@ -1,4 +1,4 @@
-//! Walks back the git log of Cargo.toml by first executing `git log --format%H
+//! Walks back the git log of Cargo.toml by first executing `git log --format=%H
 //! HEAD Cargo.toml` to get all git commit hashes where Cargo.toml was modified
 //! (`%H` outputs only hashes). It then iterates the commit hashes while running
 //! `git show $hash:Cargo.toml` for every hash, where `$hash` is the current
