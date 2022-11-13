@@ -115,6 +115,11 @@ fn walk_git_log<'a>() -> io::Result<(Version, Hash<'a>)> {
 }
 
 fn tag(version: &Version, hash: &Hash) -> io::Result<()> {
+    if version.is_unset() {
+        let _ = writeln!(io::stderr(), "crate has no commit history to walk back");
+        process::exit(1);
+    }
+
     let output = Command::new("git")
         .args(["rev-parse", &format!("{}^{{}}", version)])
         .output()?;
