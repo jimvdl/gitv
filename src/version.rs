@@ -1,14 +1,18 @@
 use std::fmt::Display;
 
+/// Crate semver struct with the `v1.25.8` format.
 #[derive(Default, Debug, PartialEq)]
 pub struct Version(Option<String>);
 
 impl Version {
+    /// Takes a string and prepends 'v' to it for formatting.
     pub fn from_string(mut s: String) -> Self {
         s.insert(0, 'v');
         Self(Some(s))
     }
 
+    /// Checks if the version is of the `None` variant. Simply calls
+    /// `Option::is_none`
     pub fn is_unset(&self) -> bool {
         self.0.is_none()
     }
