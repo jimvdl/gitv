@@ -1,16 +1,30 @@
-use serde::Deserialize;
-use std::{process::Command, fmt::Display, borrow::Cow};
+mod version;
+mod hash;
 
-fn main() {
-    let (version, hash) = walk_git_log();
-    tag(&version, &hash);
+use serde::Deserialize;
+use std::{process::Command, borrow::Cow, io};
+use version::Version;
+use hash::Hash;
+
+#[derive(Debug, Deserialize)]
+struct CargoToml {
+    package: Package,
 }
 
-fn walk_git_log<'a>() -> (Version, Hash<'a>) {
+#[derive(Debug, Deserialize)]
+struct Package {
+    version: String,
+}
+
+fn main() -> io::Result<()> {
+    let (version, hash) = walk_git_log()?;
+    tag(&version, &hash)
+}
+
+fn walk_git_log<'a>() -> io::Result<(Version, Hash<'a>)> {
     let output = Command::new("git")
         .args(["log", "--format=%H", "HEAD", "Cargo.toml"])
-        .output()
-        .unwrap();
+        .output()?;
 
     let output = String::from_utf8_lossy(&output.stdout);
     let hashes: Vec<&str> = output.split_whitespace().collect();
@@ -20,12 +34,11 @@ fn walk_git_log<'a>() -> (Version, Hash<'a>) {
     for hash in hashes {
         let output = Command::new("git")
             .args(["show", &format!("{}:Cargo.toml", hash)])
-            .output()
-            .unwrap();
+            .output()?;
 
         let output = String::from_utf8_lossy(&output.stdout);
         let toml: CargoToml = toml::from_str(&output).unwrap();
-        let crate_version = Version(Some(toml.package.version));
+        let crate_version = Version::from_string(toml.package.version);
 
         if v == crate_version {
             last_hash = Cow::Borrowed(hash);
@@ -38,12 +51,12 @@ fn walk_git_log<'a>() -> (Version, Hash<'a>) {
             continue;
         }
 
-        tag(&v, &Hash(last_hash));
+        tag(&v, &Hash::from_borrow(last_hash))?;
         last_hash = Cow::Borrowed(hash);
         v = crate_version;
     }
 
-    (v, Hash(Cow::Owned(last_hash.into_owned())))
+    Ok((v, Hash::from_string(last_hash.into_owned())))
     // the below somehow doesn't compile, can't reproduce in a mre
     // (v, last_hash.into_owned())
     //
@@ -52,17 +65,17 @@ fn walk_git_log<'a>() -> (Version, Hash<'a>) {
     // }
 }
 
-fn tag(tag: &Version, hash: &Hash) {
+fn tag(tag: &Version, hash: &Hash) -> io::Result<()> {
     let output = Command::new("git")
         .args(["rev-parse", &format!("{}^{{}}", tag)])
-        .output()
-        .unwrap();
+        .output()?;
 
     let output = String::from_utf8_lossy(&output.stdout);
-    let existing = output.split_whitespace().next().unwrap();
-    if existing == hash {
-        println!("{} {} (already tagged)", hash, tag);
-        return;
+    if let Some(existing) = output.split_whitespace().next() {
+        if existing == hash {
+            println!("{} {} (already tagged)", hash, tag);
+            return Ok(());
+        }
     }
 
     let status = Command::new("git")
@@ -71,72 +84,15 @@ fn tag(tag: &Version, hash: &Hash) {
             "-a", 
             "-m", 
             &format!("Release {}", tag), 
-            &format!("v{}", tag.as_ref()), 
+            tag.as_ref(), 
             hash.as_ref()
         ])
-        .status()
-        .unwrap();
+        .status()?;
 
     if !status.success() {
         panic!("git tag failed");
     }
 
     println!("{} {}", hash, tag);
-}
-
-#[derive(Debug, Deserialize)]
-struct CargoToml {
-    package: Package,
-}
-
-#[derive(Debug, Deserialize)]
-struct Package {
-    version: String,
-}
-
-#[derive(Default, PartialEq)]
-struct Version(Option<String>);
-
-impl Version {
-    pub fn is_unset(&self) -> bool {
-        self.0.is_none()
-    }
-}
-
-impl AsRef<str> for Version {
-    fn as_ref(&self) -> &str {
-        match &self.0 {
-            Some(s) => &s,
-            None => unreachable!()
-        }
-    }
-}
-
-impl Display for Version {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.0 {
-            Some(v) => f.write_fmt(format_args!("v{}", v)),
-            None => f.write_str("v0.0.0")
-        }
-    }
-}
-
-struct Hash<'a>(Cow<'a, str>);
-
-impl<'a> AsRef<str> for Hash<'a> {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl<'a> PartialEq<&Hash<'a>> for &str {
-    fn eq(&self, other: &&Hash) -> bool {
-        **self == *other.0
-    }
-}
-
-impl<'a> Display for Hash<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
-    }
+    Ok(())
 }
