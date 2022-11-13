@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Default, PartialEq)]
+#[derive(Default, Debug, PartialEq)]
 pub struct Version(Option<String>);
 
 impl Version {

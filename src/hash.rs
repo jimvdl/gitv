@@ -1,5 +1,6 @@
 use std::{ fmt::Display, borrow::Cow};
 
+#[derive(Debug)]
 pub struct Hash<'a>(Cow<'a, str>);
 
 impl<'a> Hash<'a> {
