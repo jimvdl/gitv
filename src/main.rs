@@ -48,7 +48,7 @@ mod version;
 mod hash;
 
 use serde::Deserialize;
-use std::{process::Command, borrow::Cow, io};
+use std::{process::{Command, self}, borrow::Cow, io::{self, Write}};
 use version::Version;
 use hash::Hash;
 
@@ -63,6 +63,11 @@ struct Package {
 }
 
 fn main() -> io::Result<()> {
+    if !std::path::Path::new("./Cargo.toml").exists() {
+        let _ = writeln!(io::stderr(), "directory is not a rust crate");
+        process::exit(1);
+    }
+
     let (version, hash) = walk_git_log()?;
     tag(&version, &hash)
 }
