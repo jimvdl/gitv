@@ -8,7 +8,7 @@ HEAD Cargo.toml` to get all git commit hashes where Cargo.toml was modified
 and wraps it in a [`Version`](src/version.rs). Some versioning checks determine
 if the current commit needs to be tagged and if it finds that commit, tag it. 
 
-Output: prints every commit has, the tag and if it has been previously tagged. 
+Output: prints every commit hash, the tag and if it has been previously tagged. 
 
 `gitv` tags as an example:
 
