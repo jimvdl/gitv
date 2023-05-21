@@ -1,5 +1,24 @@
 # gitv
 
+Automatically sorts through the commit history of a crate and tags each
+semver bump with that version.
+
+# Usage
+
+Download the latest release and place it somewhere where your `PATH`
+variable can find it and simply run
+```shell
+gitv
+```
+
+Alternatively, clone this repository and run it in the root directory of any
+crate with git history.
+```
+cargo r --release
+```
+
+## How does it work?
+
 Walks back the git log of Cargo.toml by first executing `git log --format=%H
 HEAD Cargo.toml` to get all git commit hashes where Cargo.toml was modified
 (`%H` outputs only hashes). It then iterates the commit hashes while running
@@ -28,13 +47,6 @@ Output: prints every commit has, the tag and if it has been previously tagged.
 Rust port of [jonhoo](https://github.com/jonhoo)'s
 [`tag-from-cargo-toml.sh`](https://github.com/jonhoo/configs/blob/master/bins/bin/tag-from-cargo-toml.sh)
 script.
-
-# Usage
-
-Run the following command in the root directory of any crate with git history.
-```
-cargo r --release
-```
 
 # Disclaimer
 
