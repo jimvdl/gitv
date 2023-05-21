@@ -6,7 +6,7 @@
 name: Build Release Binaries
 on:
   release:
-    types: [published]
+    types: [created]
 
 jobs:
   build-release:
