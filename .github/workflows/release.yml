@@ -4,7 +4,9 @@
 # https://github.com/typst/typst/blob/main/.github/workflows/release.yml
 
 name: Build Release Binaries
-on: workflow_dispatch
+on:
+  release:
+    types: [created]
 
 jobs:
   build-release:
