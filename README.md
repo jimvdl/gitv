@@ -1,13 +1,15 @@
-# gitv
-
-Automatically sorts through the commit history of a crate and tags each
+`gitv` automatically sorts through the commit history of a crate and tags each
 semver bump with that version.
 
-# Usage
+**DISCLAIMER:** `gitv` is for personal use and not intended for wide-spread adoption. Executing
+this program likely results in undefined behaviour if used improperly, as it has
+not yet been rigorously tested. Use at your own risk!
+
+---
 
 Download the latest release and place it somewhere where your `PATH`
 variable can find it and simply run
-```shell
+```sh
 gitv
 ```
 
@@ -47,9 +49,3 @@ Output: prints every commit hash, the tag and if it has been previously tagged.
 Rust port of [jonhoo](https://github.com/jonhoo)'s
 [`tag-from-cargo-toml.sh`](https://github.com/jonhoo/configs/blob/master/bins/bin/tag-from-cargo-toml.sh)
 script.
-
-# Disclaimer
-
-`gitv` is for personal use and not intended for wide-spread adoption. Executing
-this program likely results in undefined behaviour if used improperly, as it has
-not yet been rigorously tested. Use at your own risk!
